@@ -1,0 +1,525 @@
+{
+	"variables": [],
+	"info": {
+		"name": "MobileFabric",
+		"_postman_id": "286cf93a-6b89-8f34-2948-ce0db8116edc",
+		"description": "A collection to test Kony Mobile Fabric.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "authenticateWithKonyCloud",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"postman.setEnvironmentVariable(\"claims_token\", jsonData.claims_token.value);",
+							"tests[`Set env claims_token to '${environment.claims_token}'`] = environment.claims_token;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://accounts.auth.konycloud.com/login",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "userid",
+							"value": "{{userid}}",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "password",
+							"value": "{{password}}",
+							"type": "text",
+							"enabled": true
+						}
+					]
+				},
+				"description": "Attempts authentication with the Kony Cloud account. Get the token from the claims_token property in this response and set it as the value of the claims_token variable in the environment."
+			},
+			"response": []
+		},
+		{
+			"name": "whoami",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"postman.setEnvironmentVariable(\"user_guid\", jsonData.user_guid);",
+							"tests[`Set env user_guid to '${environment.user_guid}'`] = environment.user_guid;",
+							"",
+							"var account = _.find(jsonData.accounts, function(act) { return act.account_name.toUpperCase() === environment.account_name.toUpperCase(); });",
+							"",
+							"postman.setEnvironmentVariable(\"account_id\", account.account_id);",
+							"tests[`Set env account_id to '${environment.account_id}'`] = environment.account_id;",
+							"",
+							"postman.setEnvironmentVariable(\"account_guid\", account.account_guid);",
+							"tests[`Set env account_guid to '${environment.account_guid}'`] = environment.account_guid;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://api.kony.com/api/v1_1/whoami",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Gets info from user, all accessible Kony Cloud accounts and the last selected account."
+			},
+			"response": []
+		},
+		{
+			"name": "listAccounts",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"var count = jsonData.length;",
+							"tests[`You have access to ${count} accounts`] = count;",
+							"",
+							"var accounts = _.map(jsonData, function(account){return account.name});",
+							"tests[`You have access to these accounts '${accounts}'`] = accounts;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://manage.kony.com/api/v1_0/accounts",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Lists the Kony Cloud accounts a user has access to."
+			},
+			"response": []
+		},
+		{
+			"name": "getAccount",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"postman.setEnvironmentVariable(\"account_id\", jsonData.account_id);",
+							"tests[`Set env account_id to '${jsonData.account_id}'`] = environment.account_id;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://manage.kony.com/api/v1_0/accounts/{{account_guid}}",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Lists the Kony Cloud accounts a user has access to."
+			},
+			"response": []
+		},
+		{
+			"name": "listUsers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"var count = jsonData.length;",
+							"tests[`Account '${environment.account_guid}' has ${jsonData.total} users`] = jsonData.total;",
+							"",
+							"var users = jsonData.users;",
+							"",
+							"var owners = _.filter(users, function(user){return user.isOwner;});",
+							"tests[`Account '${environment.account_guid}' has ${owners.length} owners`] = owners.length;",
+							"",
+							"var admins = _.filter(users, function(user){return user.isAdmin;});",
+							"tests[`Account '${environment.account_guid}' has ${admins.length} admins`] = admins.length;",
+							"",
+							"var members = _.filter(users, function(user){return user.isMember;});",
+							"tests[`Account '${environment.account_guid}' has ${members.length} members`] = members.length;",
+							"",
+							"tests[`Account's user count = owners + admins + members`] = owners.length + admins.length + members.length === jsonData.total;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://manage.kony.com/api/v1_0/accounts/{{account_guid}}/users",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Lists the Kony Cloud accounts a user has access to."
+			},
+			"response": []
+		},
+		{
+			"name": "listEnvironments",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"var count = jsonData.length;",
+							"tests[`Account '${environment.account_guid}' has ${count} clouds`] = count;",
+							"",
+							"var clouds = _.map(jsonData, function(cloud){return cloud.name});",
+							"tests[`Account '${environment.account_guid}' has access to these clouds '${clouds}'`] = clouds;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://manage.kony.com/api/v1_0/accounts/{{account_guid}}/clouds",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Lists the Kony Cloud accounts a user has access to."
+			},
+			"response": []
+		},
+		{
+			"name": "listApps",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"var apps = jsonData.content;",
+							"var count = jsonData.totalcount;",
+							"",
+							"tests[`Account '${environment.account_guid}' has ${count} apps`] = count;",
+							"",
+							"var mbaasapps = _.filter(apps, function(app){return app.type === 'mbaasapp'});",
+							"tests[`Account '${environment.account_guid}' has '${mbaasapps.length}' MBaaS apps`] = mbaasapps.length;",
+							"",
+							"var appId = _.find(apps, function(app) {",
+							"    return app.name.toUpperCase() === environment.app_name.toUpperCase();",
+							"}).id;",
+							"postman.setEnvironmentVariable(\"app_id\", appId);",
+							"tests[`Set env app_id to '${environment.app_id}'`] = environment.app_id;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://{{account_id}}.workspace.konycloud.com/api/v1/ws/{{account_id}}/apps?icon=false&compact=true",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Lists the Kony Cloud accounts a user has access to."
+			},
+			"response": []
+		},
+		{
+			"name": "getApp",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://{{account_id}}.workspace.konycloud.com/api/v1/ws/{{account_id}}/apps/{{app_id}}",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Lists the Kony Cloud accounts a user has access to."
+			},
+			"response": []
+		},
+		{
+			"name": "getUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://manage.kony.com/api/v1_0/accounts/{{account_guid}}/users/{{user_guid}}",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Lists the Kony Cloud accounts a user has access to."
+			},
+			"response": []
+		},
+		{
+			"name": "authenticateWithJasper",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"postman.setEnvironmentVariable(\"jasper_session\", jsonData.jasper_session);",
+							"tests[`Set env jasper_session to '${environment.jasper_session}'`] = environment.jasper_session;",
+							"",
+							"postman.setEnvironmentVariable(\"awselb_session\", jsonData.awselb_session);",
+							"tests[`Set env awselb_session to '${environment.awselb_session}'`] = environment.awselb_session;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://api.kony.com/api/v1_1/accounts/{{account_guid}}/reports/login?user_guid=0f750f64-586b-4488-9a72-0e4b44d613ba",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Uses a Kony Cloud claims_token to log into the underlying Jasper Reports server.\nCall authenticateWithKonyCloud and use the claims_token in the response as a header here:\n\nX-Kony-Authorization: claims_token from authenticateWithKonyCloud\n\nuser_guid: user_guid from getUserInfo"
+			},
+			"response": []
+		},
+		{
+			"name": "getSharedReportInputControls",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"var count = jsonData.length;",
+							"tests[`Report '${environment.sharedReport}' has ${count} filters`] = count;",
+							"",
+							"var filters = _.map(jsonData, function(filter){return filter.id});",
+							"tests[`The filters for report '${environment.sharedReport}' are '${filters}'`] = filters;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://api.kony.com/api/v1_1/accounts/{{account_guid}}/reports/inputControls?jasperSession={{jasper_session}}&awselbSession={{awselb_session}}&resourceUri=%2Fshared_%2F{{shared_report}}",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Gets the input controls for a custom report of Kony APM data.\n\njasper_session: jasper_session from authenticateWithJasper\n\nNote: Seems broken. It always returns an array of a single null element.\n\n  \"inputControl\": [null]"
+			},
+			"response": []
+		},
+		{
+			"name": "getSharedReportInputControlValues",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"var controls = jsonData.inputControlState;",
+							"var count = controls.length",
+							"tests[`Report '${environment.sharedReport}' has ${count} input controls`] = count;",
+							"",
+							"var filters = _.map(controls, function(filter){return filter.id});",
+							"tests[`The filters for report '${environment.sharedReport}' are '${filters}'`] = filters"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://api.kony.com/api/v1_1/accounts/{{account_guid}}/reports/inputControlValues?jasperSession={{jasper_session}}&awselbSession={{awselb_session}}&resourceUri=%2Fshared_%2F{{shared_report}}&inputControlValues=true",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Gets the input control values for a custom report of Kony APM data.\n\njasper_session: sessionID from authenticateWithJasper\n\nNote: Seems unstable. It sometimes returns an empty array.\n\n  {\"inputControlState\": []}"
+			},
+			"response": []
+		},
+		{
+			"name": "getPrivateReportInputControls",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;",
+							"",
+							"var jsonData = function(){try{return JSON.parse(responseBody);}catch(e){return {};}}();",
+							"",
+							"var controls = jsonData.inputControlState;",
+							"var count = controls.length",
+							"tests[`Report '${environment.sharedReport}' has ${count} input controls`] = count;",
+							"",
+							"var filters = _.map(controls, function(filter){return filter.id}).join('|');",
+							"tests[`The filters for report '${environment.sharedReport}' are '${filters}'`] = filters;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://manage.kony.com/api/v1_0/accounts/{{account_guid}}/reports/inputControls?jasperSession={{jasper_session}}&awselbSession={{awselb_session}}&resourceUri=%2Fprvt_{{account_guid}}_{{account_id}}%2F{{private_report}}&inputControls=true",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Gets the input controls for a custom report of Kony APM data.\n\njasper_session: jasper_session from authenticateWithJasper\n\nNote: Seems broken. It always returns an array of a single null element.\n\n  \"inputControl\": [null]"
+			},
+			"response": []
+		},
+		{
+			"name": "downloadSharedReport",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Config status is 200\"] = responseCode.code === 200;"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://api.kony.com/api/v1_1/accounts/{{account_guid}}/reports/view?jasperSession={{jasper_session}}&awselbSession={{awselb_session}}&file_extension=csv&resourceUri=%2Fshared_%2F{{shared_report}}&filters=appname_1,eventtimestamp_utc_1&type=csv&export=true&appname_1=EngieBuildingIoT&eventtimestamp_utc_1=2017-06-01T13:30:09",
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Kony-Authorization",
+						"value": "{{claims_token}}",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Gets a custom report of Kony APM data.\n\njasper_session: sessionID from authenticateWithJasper\n\n"
+			},
+			"response": []
+		}
+	]
+}
